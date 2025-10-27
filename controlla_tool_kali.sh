@@ -33,15 +33,15 @@ search_new_tools_with_ai() {
   
   case "$lang_choice" in
     1)
-      LANGUAGE="Italian only"
+      LANGUAGE="it"
       LANG_NOTE="(Risultati in Italiano)"
       ;;
     2)
-      LANGUAGE="Italian and English"
+      LANGUAGE="en"
       LANG_NOTE="(Risultati in Italiano e Inglese)"
       ;;
     *)
-      LANGUAGE="Italian only"
+      LANGUAGE="it"
       LANG_NOTE="(Risultati in Italiano)"
       ;;
   esac
@@ -55,34 +55,25 @@ search_new_tools_with_ai() {
     all_tools_list="$all_tools_list ${categories[$category]}"
   done
   
-  # Prepara il prompt con la lista dei tool esistenti e richiesta dettagli
-  PROMPT="You are a cybersecurity expert. I have a list of penetration testing tools that I'm already monitoring: $all_tools_list
-
-Please suggest 10 NEW and DIFFERENT cybersecurity tools for penetration testing that are NOT in my list above.
-
-For EACH tool, provide in $LANGUAGE:
-1. 🔧 AI: TOOL_NAME
-2. 📝 Brief description (2-3 lines explaining what it does)
-3. 🏷️ Latest stable version available
-4. 📚 Official documentation link or most updated guide URL
-5. 💡 Primary use case (e.g., network scanning, web exploitation, forensics)
-
-Format example:
----
-🔧 AI: ToolName
-📝 Description of what this tool does and why it's useful for penetration testing...
-🏷️ Version: v2.5.0 (2024)
-📚 Guide: https://official-site.com/docs
-💡 Category: Web Application Security
----
-
-Focus on:
-- Tools released or significantly updated in 2024-2025
-- Tools available in Kali Linux repositories or easily installable on Linux
-- Popular and actively maintained tools
-- Different categories: network scanning, web hacking, password cracking, forensics, exploitation, wireless attacks
-
-IMPORTANT: Do NOT suggest any tool already in my list. Only suggest NEW tools. Provide response in $LANGUAGE."
+  # Controlla se Python3 è disponibile
+  if ! command -v python3 &> /dev/null; then
+    echo "❌ Python3 non trovato!"
+    echo "💡 Installa Python3: sudo apt install python3 python3-pip"
+    return
+  fi
+  
+  # Controlla se il modulo Python esiste
+  if [ ! -f "ai_tool_search.py" ]; then
+    echo "⚠️  File ai_tool_search.py non trovato nella directory corrente"
+    echo "💡 Assicurati che ai_tool_search.py sia nella stessa cartella dello script"
+    return
+  fi
+  
+  # Installa requests se necessario
+  if ! python3 -c "import requests" 2>/dev/null; then
+    echo "📦 Installazione modulo Python 'requests'..."
+    pip3 install requests --quiet || sudo pip3 install requests --quiet
+  fi
   
   echo "⏳ Controllo disponibilità servizi AI..."
   
@@ -92,6 +83,8 @@ IMPORTANT: Do NOT suggest any tool already in my list. Only suggest NEW tools. P
     
     if ollama list 2>/dev/null | grep -q "NAME"; then
       echo "📡 Interrogazione AI locale in corso... $LANG_NOTE"
+      
+      PROMPT="Suggest 10 NEW cybersecurity tools for penetration testing NOT in this list: $all_tools_list. Format: tool name - description. Be concise."
       
       response=$(ollama run llama2 "$PROMPT" 2>/dev/null || ollama run mistral "$PROMPT" 2>/dev/null)
       
@@ -124,117 +117,28 @@ IMPORTANT: Do NOT suggest any tool already in my list. Only suggest NEW tools. P
     fi
   fi
   
-  # Se Ollama non è disponibile, usa API Hugging Face
-  echo "🌐 Utilizzo API Hugging Face (Inference Providers)..."
+  # Usa il modulo Python per chiamare l'API Hugging Face
+  echo "🌐 Utilizzo API Hugging Face tramite modulo Python..."
+  echo ""
   
-  if [ -z "$HF_API_KEY" ]; then
-    echo "❌ API Key non trovata!"
-    echo "💡 Puoi impostare la variabile d'ambiente:"
-    echo "   export HF_API_KEY='tua_chiave_qui'"
-    return
-  fi
+  # Chiama lo script Python
+  ai_output=$(python3 ai_tool_search.py $all_tools_list --lang $LANGUAGE 2>&1)
+  exit_code=$?
   
-  echo "📡 Interrogazione AI in corso... $LANG_NOTE"
-  echo "⏳ Attendere, l'AI sta cercando informazioni dettagliate..."
-  
-  # Escape del prompt per JSON (rimuove caratteri problematici)
-  PROMPT_ESCAPED=$(echo "$PROMPT" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | tr '\n' ' ')
-  
-  # Tentativo con retry (max 3 tentativi)
-  max_attempts=3
-  attempt=1
-  response=""
-  
-  while [ $attempt -le $max_attempts ]; do
-    echo "🔄 Tentativo $attempt di $max_attempts..."
+  if [ $exit_code -eq 0 ]; then
+    # Successo - mostra output
+    echo "$ai_output"
     
-    # Chiamata API a Hugging Face (nuovo endpoint Inference Providers)
-    response=$(curl -s -X POST \
-      "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2" \
-      -H "Authorization: Bearer $HF_API_KEY" \
-      -H "Content-Type: application/json" \
-      --data-raw "{\"inputs\":\"$PROMPT_ESCAPED\",\"parameters\":{\"max_new_tokens\":1200,\"temperature\":0.7,\"return_full_text\":false}}" \
-      2>/dev/null)
-    
-    # Controlla se c'è un errore di loading
-    if echo "$response" | grep -q "currently loading"; then
-      estimated_time=$(echo "$response" | grep -o '"estimated_time":[0-9.]*' | cut -d':' -f2)
-      echo "⏳ Modello in caricamento... tempo stimato: ${estimated_time}s"
-      
-      if [ $attempt -lt $max_attempts ]; then
-        echo "⏸️  Attendo 25 secondi prima del prossimo tentativo..."
-        sleep 25
-      fi
-    else
-      # Se non c'è errore di loading, esci dal loop
-      break
-    fi
-    
-    attempt=$((attempt + 1))
-  done
-  
-  # Estrai il testo generato
-  generated_text=$(echo "$response" | grep -o '"generated_text":"[^"]*"' | sed 's/"generated_text":"//;s/"$//' | sed 's/\\n/\n/g')
-  
-  if [ -n "$generated_text" ]; then
-    echo ""
-    echo "╔════════════════════════════════════════╗"
-    echo "║  🤖 AI: NUOVI TOOL DI CYBERSECURITY   ║"
-    echo "║    (Fonte: Hugging Face Inference)    ║"
-    echo "╚════════════════════════════════════════╝"
-    echo ""
-    echo "$generated_text"
-    echo ""
-    echo "════════════════════════════════════════"
-    echo ""
-    echo "💡 NOTA: Verifica sempre l'affidabilità e la sicurezza"
-    echo "   di nuovi tool prima di installarli sul tuo sistema!"
-    echo "   Controlla i link delle guide ufficiali forniti."
-    
-    # Salva nel report con intestazione distintiva
-    {
-    echo ""
-    echo "╔════════════════════════════════════════╗"
-    echo "║  🤖 AI: NUOVI TOOL DI CYBERSECURITY   ║"
-    echo "║    (Fonte: Hugging Face Inference)    ║"
-    echo "║        Lingua: $LANGUAGE              ║"
-    echo "╚════════════════════════════════════════╝"
-    echo ""
-    echo "$generated_text"
-    echo ""
-    echo "════════════════════════════════════════"
-    echo ""
-    echo "⚠️  IMPORTANTE:"
-    echo "- Verifica sempre l'affidabilità di nuovi tool prima di installarli"
-    echo "- Controlla i link delle guide ufficiali forniti dall'AI"
-    echo "- Assicurati che le versioni siano aggiornate al momento dell'installazione"
-    echo "- Leggi sempre la documentazione prima dell'uso"
-    } >> "$REPORT"
+    # Salva nel report
+    echo "$ai_output" >> "$REPORT"
   else
-    echo "❌ Errore nella risposta API dopo $max_attempts tentativi"
-    echo "💡 Possibili cause:"
-    echo "   - Modello temporaneamente non disponibile"
-    echo "   - Quota API esaurita"
-    echo "   - Problemi di connessione"
+    # Errore - mostra messaggi di debug
+    echo "$ai_output"
     echo ""
-    
-    # Controlla se c'è un messaggio di errore specifico
-    error_msg=$(echo "$response" | grep -o '"error":"[^"]*"' | cut -d'"' -f4)
-    if [ -n "$error_msg" ]; then
-      echo "   📋 Dettagli errore: $error_msg"
-    fi
-    
-    # Mostra raw response per debug (primi 200 caratteri)
-    echo ""
-    echo "   🔍 Debug (primi 200 caratteri della risposta):"
-    echo "   $(echo "$response" | head -c 200)"
-    echo ""
-    echo "💡 SUGGERIMENTI:"
-    echo "   1. Attendi qualche minuto e riprova"
-    echo "   2. Verifica la connessione internet"
-    echo "   3. Installa Ollama per usare AI locale (offline):"
-    echo "      curl -fsSL https://ollama.com/install.sh | sh"
-    echo "      ollama pull mistral"
+    echo "💡 SUGGERIMENTI AGGIUNTIVI:"
+    echo "   - Verifica che il file ai_tool_search.py sia presente"
+    echo "   - Controlla che Python3 e requests siano installati"
+    echo "   - Prova con Ollama per uso offline (vedi sopra)"
   fi
 }
 
