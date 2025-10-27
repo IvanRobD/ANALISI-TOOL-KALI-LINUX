@@ -10,7 +10,7 @@ import sys
 import time
 
 # API Key Hugging Face
-HF_API_KEY = "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"
+HF_API_KEY = ""
 API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2"
 
 def search_new_tools(existing_tools, language="Italian only", max_retries=3):
