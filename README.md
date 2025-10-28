@@ -1,76 +1,68 @@
-# README.md
-
-# Kali Tools Checker & AI Enhancer
+Kali Tools Checker & AI Enhancer
 
 Un repository completo per:
 
-* Analizzare quali tool di cybersecurity sono installati su Kali Linux
-* Generare report dettagliati degli strumenti presenti e mancanti
-* Ricercare nuovi tool di cybersecurity tramite AI (locale o API Hugging Face)
-* Installazione interattiva dei tool mancanti
+Analizzare quali tool di cybersecurity sono installati su Kali Linux
 
-## Caratteristiche principali
+Generare report dettagliati degli strumenti presenti e mancanti
 
-* ✅ Controllo automatico dei tool installati
-* 📄 Generazione report in formato leggibile
-* 🤖 Ricerca di nuovi tool tramite AI
-* 🧰 Installazione interattiva dei tool mancanti
-* 🌐 Supporto per lingua italiana e inglese
+Ricercare nuovi tool di cybersecurity tramite AI (senza dipendenze esterne)
 
-## Struttura della repository
+Installazione interattiva dei tool mancanti
 
-```
+Caratteristiche principali
+
+✅ Controllo automatico dei tool installati
+📄 Generazione report in formato leggibile
+🤖 Ricerca di nuovi tool tramite AI (senza API esterne)
+🧰 Installazione interattiva dei tool mancanti
+🌐 Supporto per lingua italiana e inglese
+
+Struttura della repository
 kali-tools-repo/
 │
 ├─ controlla_tool_kali.sh   # Script principale
 ├─ lista_pacchetti.txt      # Lista dei pacchetti da controllare
+├─ ai_tool_search.py        # Script per la ricerca AI dei nuovi tool
 ├─ reports/                 # Cartella in cui salvare i report generati
 ├─ docs/                    # Documentazione aggiuntiva
 └─ README.md                # Questo file
-```
 
-## Come utilizzare
-
-1. Clona la repository:
-
-```bash
+Come utilizzare
+Clonare la repository:
 git clone https://github.com/tuo-username/kali-tools-repo.git
 cd kali-tools-repo
-```
 
-2. Aggiungi la lista dei pacchetti da controllare in `lista_pacchetti.txt`
+Aggiungere la lista dei pacchetti da controllare in lista_pacchetti.txt
 
-3. Imposta la tua API key per Hugging Face (opzionale, per ricerca AI):
+Aggiungi i nomi dei pacchetti dei tool che vuoi controllare in un file di testo, uno per riga.
 
-```bash
-export HF_API_KEY='tua_chiave_qui'
-```
-
-4. Esegui lo script:
-
-```bash
+Eseguire lo script:
 bash controlla_tool_kali.sh
-```
 
-5. Segui le istruzioni per visualizzare il report, installare tool mancanti o effettuare ricerca AI.
 
-## Requisiti
+Lo script eseguirà il controllo dei tool installati su Kali Linux e genererà un report. Inoltre, sarà possibile avviare la ricerca di nuovi tool tramite AI e l'installazione automatica dei tool mancanti.
 
-* Kali Linux
-* Bash 5+
-* Accesso a internet per installazioni e API AI (opzionale)
-* Ollama (opzionale, per AI locale)
-* API key Hugging Face (opzionale)
+Come funziona la ricerca AI
 
-## Suggerimenti
+La ricerca dei nuovi tool di cybersecurity avviene tramite un semplice algoritmo Python che analizza un database locale di strumenti disponibili o risorse di riferimento per suggerire nuovi tool da installare, senza dipendenze esterne o necessità di API.
 
-* Lo script è pensato per **principianti di cybersecurity** per studiare e testare tool individualmente.
-* Verifica sempre l'affidabilità dei nuovi tool suggeriti dall'AI prima di installarli.
+Requisiti
 
-## Licenza
+Kali Linux
+
+Bash 5+
+
+Python 3.x (senza dipendenze esterne)
+
+Accesso a internet per installazioni dei tool mancanti
+
+Suggerimenti
+
+Lo script è pensato per principianti di cybersecurity per studiare e testare tool individualmente.
+
+Verifica sempre l'affidabilità dei nuovi tool suggeriti dall'AI prima di installarli.
+
+Licenza
 
 Questo progetto è rilasciato sotto licenza MIT. Vedi LICENSE per dettagli.
-
----
-
-© 2025 Cybersecurity Scripts
