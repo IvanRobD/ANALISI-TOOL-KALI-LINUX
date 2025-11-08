@@ -1,3 +1,4 @@
+<img width="616" height="429" alt="kali_tool" src="https://github.com/user-attachments/assets/8fe2e292-298c-459d-a1ba-7bd619323603" />
 Kali Tools Checker & AI Enhancer
 
 Un repository completo per:
